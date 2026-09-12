@@ -17,6 +17,10 @@ var cantidad_por_pantalla = 8;
 //Se usa para saber si hay que animar una escritura o un borrado.
 var ultima_longitud_texto = 0;
 
+//Colores del panel "Pantalla", estilo hoja de procesador de texto (fondo blanco)
+var COLOR_PANTALLA_OK = "#1f2430";
+var COLOR_PANTALLA_WARN = "#b45309";
+
 
 //Genera la codificación,memoria y pantalla según el tamaño de palabra seleccionado por el usuario
 function generar_instancia_vacia(){
@@ -27,6 +31,7 @@ function generar_instancia_vacia(){
   }
 
   mostrar_entradas_salidas();
+  sonido_generar();
 
   //Oculto el panel de generar/cargar archivo
   document.getElementById("generar_cargar").classList.add('oculto_inicial');
@@ -52,6 +57,7 @@ function mostrar_entradas_salidas(){
   mostrar_pantalla();
   mostrar_tabla_codificacion();
   mostrar_entrada();
+  actualizar_estado_teclado_virtual();
 }
 
 
@@ -192,6 +198,9 @@ function actualizar_codificacion(){
     }
   }
 
+  actualizar_estado_teclado_virtual();
+
+  //Limpia memoria, pantalla y campo de entrada
   limpiar_todo();
 }
 
@@ -213,6 +222,10 @@ function mostrar_entrada(){
   entrada.setAttribute("oninput", "refrescar_ram_pantalla()");
 
   body.appendChild(entrada);
+
+  //Escucho las teclas físicas para iluminar el teclado gráfico mientras están apretadas
+  entrada.addEventListener('keydown', manejar_tecla_presionada);
+  entrada.addEventListener('keyup', manejar_tecla_soltada);
 }
 
 function mostrar_memoria(){
@@ -260,9 +273,18 @@ function mostrar_memoria(){
 
   tabla.appendChild(tblBody);
   tabla_memoria.appendChild(tabla);
-  document.getElementById("fila0").scrollIntoView();
+  desplazar_frame_memoria("fila0");
+
+  //Actualizo la etiqueta decorativa del módulo con el tamaño de palabra actual
+  var etiqueta = document.getElementById("etiqueta_ram");
+  if (etiqueta){
+    etiqueta.textContent = "SIMU-RAM · " + tamanio_palabra + " bit/car";
+  }
 }
 
+//Construye la vista de Pantalla a partir de dump_memoria (se usa al generar una instancia
+//vacía y al importar un archivo). No muestra guiones: las posiciones vacías quedan en blanco,
+//como en una hoja de un procesador de texto.
 function mostrar_pantalla(){
 
   if (document.contains(document.getElementById("monitor"))) {
@@ -285,22 +307,24 @@ function mostrar_pantalla(){
       var celda = document.createElement("td");
 
       var codigo_caracter_actual = "";
+      var esVacio = false;
 
       for (var k = 0; k < tamanio_palabra; k++){
         codigo_caracter_actual += dump_memoria[(celdas_rellenadas)*tamanio_palabra+k];
-
         if (codigo_caracter_actual[k] == "-"){
-          celda.style.color = "var(--texto-tenue)";
+          esVacio = true;
           break;
         }
       }
 
-      var caracter_actual = dame_caracter(codigo_caracter_actual);
-      if (caracter_actual !== "-"){
-        celda.style.color = "var(--accent-ok)";
+      var textoCelda;
+      if (esVacio){
+        textoCelda = document.createTextNode("");
+      } else {
+        celda.style.color = COLOR_PANTALLA_OK;
+        textoCelda = document.createTextNode(dame_caracter(codigo_caracter_actual));
       }
 
-      var textoCelda = document.createTextNode(caracter_actual);
       celda.appendChild(textoCelda);
       hilera.appendChild(celda);
       celdas_rellenadas++;
@@ -369,20 +393,25 @@ function actualizar_ram_pantalla(texto){
       celdasFila[0].style.fontWeight = "normal";
     }
 
-    //--- Actualizo la celda correspondiente en Pantalla ---
+    //--- Actualizo la celda correspondiente en Pantalla (sin guiones, tipo documento) ---
     var celdaMonitor = celda_monitor(pos);
+    celdaMonitor.classList.remove('cursor-activo');
 
     if (!hayCaracter){
-      celdaMonitor.innerHTML = "-";
-      celdaMonitor.style.color = "var(--texto-tenue)";
+      celdaMonitor.innerHTML = "";
+      celdaMonitor.style.color = "";
+      //El cursor parpadeante marca la próxima posición libre, como en un editor de texto
+      if (pos === texto.length){
+        celdaMonitor.classList.add('cursor-activo');
+      }
     } else if (!caracterDefinido){
       //El caracter tipeado no tiene código binario asignado: en Pantalla se avisa
       //con "?" y en RAM queda sin patrón de bits definido ("-").
       celdaMonitor.innerHTML = caracter_indefinido;
-      celdaMonitor.style.color = "var(--accent-warn)";
+      celdaMonitor.style.color = COLOR_PANTALLA_WARN;
     } else {
       celdaMonitor.innerHTML = caracterActual;
-      celdaMonitor.style.color = "var(--accent-ok)";
+      celdaMonitor.style.color = COLOR_PANTALLA_OK;
     }
   }
 
@@ -392,8 +421,15 @@ function actualizar_ram_pantalla(texto){
 
 
 function limpiar_todo(){
+  sonido_limpiar();
   document.getElementById('entrada').value = "";
   actualizar_ram_pantalla("");
+}
+
+//Envuelve el reload para poder reproducir el sonido antes de que la página se vaya
+function reiniciar_pagina(){
+  sonido_reiniciar();
+  setTimeout(function(){ window.location.reload(); }, 350);
 }
 
 
@@ -429,8 +465,10 @@ function animar_escritura(pos, caracter){
 
   resaltar_fila(document.getElementById("fila"+pos), clase);
   resaltar_celda(celda_monitor(pos), clase);
-  disparar_pulso(document.getElementById("pulso1"), clase);
-  disparar_pulso(document.getElementById("pulso2"), clase);
+  resaltar_celda(document.getElementById("pulso1"), clase);
+  resaltar_celda(document.getElementById("pulso2"), clase);
+
+  sonido_electrico(caracterDefinido);
 }
 
 //Resalta, en gris, la fila de RAM y la celda de Pantalla que se acaban de vaciar
@@ -456,7 +494,7 @@ function resaltar_fila(tr, clase){
   }
 }
 
-//Dispara (o re-dispara) una animación CSS sobre una celda
+//Dispara (o re-dispara) una animación CSS sobre un elemento
 function resaltar_celda(elemento, clase){
   if (!elemento){
     return;
@@ -466,14 +504,58 @@ function resaltar_celda(elemento, clase){
   elemento.classList.add(clase);
 }
 
-//Dispara el pulso que viaja por una traza (mismo mecanismo, distinto elemento)
-function disparar_pulso(elemento, clase){
-  if (!elemento){
+
+//////////// TECLADO GRÁFICO ////////////
+
+//Prende o apaga (según prendida=true/false) la tecla del teclado gráfico que
+//corresponde al caracter dado, si existe entre nuestras teclas definidas.
+function tecla_virtual(caracter){
+  if (caracter === null || caracter === undefined){
+    return null;
+  }
+  var selector = '#teclado_virtual .tecla[data-char="' + caracter + '"]';
+  return document.querySelector(selector);
+}
+
+function manejar_tecla_presionada(e){
+
+  if (e.key === 'Backspace' || e.key === 'Delete'){
+    sonido_tecla();
     return;
   }
-  elemento.classList.remove('viaje-ok', 'viaje-warn');
-  void elemento.offsetWidth;
-  elemento.classList.add(clase);
+
+  var caracter = (e.key && e.key.length === 1) ? e.key.toLowerCase() : null;
+  var tecla = tecla_virtual(caracter);
+  if (!tecla){
+    return;
+  }
+
+  var ok = caracter_en_diccionario(caracter);
+  tecla.classList.add('tecla-presionada', ok ? 'tecla-ok' : 'tecla-warn');
+  sonido_tecla();
+}
+
+function manejar_tecla_soltada(e){
+  var caracter = (e.key && e.key.length === 1) ? e.key.toLowerCase() : null;
+  var tecla = tecla_virtual(caracter);
+  if (!tecla){
+    return;
+  }
+  tecla.classList.remove('tecla-presionada', 'tecla-ok', 'tecla-warn');
+}
+
+//Atenúa las teclas cuyo caracter todavía no tiene un código asignado
+//en la codificación actual (útil, por ejemplo, con 2 bits: sólo a,b,c,d activas)
+function actualizar_estado_teclado_virtual(){
+  var teclas = document.querySelectorAll('#teclado_virtual .tecla');
+  teclas.forEach(function(tecla){
+    var caracter = tecla.getAttribute('data-char');
+    if (caracter_en_diccionario(caracter)){
+      tecla.classList.remove('tecla-sin-codigo');
+    } else {
+      tecla.classList.add('tecla-sin-codigo');
+    }
+  });
 }
 
 
@@ -591,11 +673,28 @@ function dame_codificacion(caracter){
 function ver_memoria_modificada(cantidad_caracteres_actual){
 
   if (cantidad_caracteres_actual <= cantidad_por_pantalla){
-    document.getElementById("fila0").scrollIntoView();
+    desplazar_frame_memoria("fila0");
   } else {
     var fila_para_centrar = (Math.floor((cantidad_caracteres_actual-1) / cantidad_por_pantalla))*cantidad_por_pantalla;
-    document.getElementById("fila"+fila_para_centrar).scrollIntoView();
+    desplazar_frame_memoria("fila"+fila_para_centrar);
   }
+}
+
+//Desplaza el scroll INTERNO del panel de RAM (frame_mem) para mostrar la fila indicada,
+//escribiendo scrollTop directamente en vez de usar scrollIntoView().
+//FIX: scrollIntoView() puede "burbujear" y mover el scroll de toda la página (no sólo el
+//del recuadro de RAM) cuando el elemento no entra cómodo en el viewport. Esto hacía que la
+//página saltara hacia abajo con cada tecla y al Limpiar. Calculando la posición a mano y
+//asignando sólo contenedor.scrollTop, el scroll de la página nunca se toca.
+function desplazar_frame_memoria(idFila){
+  var contenedor = document.getElementById("frame_mem");
+  var fila = document.getElementById(idFila);
+  if (!contenedor || !fila){
+    return;
+  }
+  var contenedorRect = contenedor.getBoundingClientRect();
+  var filaRect = fila.getBoundingClientRect();
+  contenedor.scrollTop += (filaRect.top - contenedorRect.top);
 }
 
 
@@ -605,4 +704,111 @@ function createBinaryString(nMask, tamanio_palabra) {
   for (var nFlag = 0, nShifted = nMask; nFlag < 32; nFlag++, sMask += String(nShifted >>> 31), nShifted <<= 1);
   //Recorto el substring con la cantidad de finales que necesito
   return sMask.substring(32-tamanio_palabra);
+}
+
+
+//////////// SONIDOS (sintetizados con Web Audio API, sin archivos externos) ////////////
+
+var sonido_activado = true;
+var contexto_audio = null;
+
+function alternar_sonido(){
+  sonido_activado = !sonido_activado;
+  document.getElementById('boton_sonido').textContent = sonido_activado ? '🔊 Sonido' : '🔇 Sonido';
+}
+
+function obtener_contexto_audio(){
+  if (!contexto_audio){
+    var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    contexto_audio = new AudioContextClass();
+  }
+  //Los navegadores exigen una interacción del usuario antes de reproducir sonido.
+  //Como esto siempre se llama desde un manejador de click/teclado, ya se cumple.
+  if (contexto_audio.state === 'suspended'){
+    contexto_audio.resume();
+  }
+  return contexto_audio;
+}
+
+//Tono simple: útil como bloque para armar el resto de los sonidos
+function tono(frecuencia, duracionMs, tipoOnda, volumen){
+  var ctx = obtener_contexto_audio();
+  var osc = ctx.createOscillator();
+  var gain = ctx.createGain();
+  osc.type = tipoOnda || 'square';
+  osc.frequency.setValueAtTime(frecuencia, ctx.currentTime);
+  gain.gain.setValueAtTime(volumen || 0.05, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duracionMs/1000);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start();
+  osc.stop(ctx.currentTime + duracionMs/1000);
+}
+
+//Click seco de tecla mecánica (ruido blanco corto con decaimiento)
+function sonido_tecla(){
+  if (!sonido_activado){
+    return;
+  }
+  var ctx = obtener_contexto_audio();
+  var duracion = 0.02;
+  var bufferSize = Math.floor(ctx.sampleRate * duracion);
+  var buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  var datos = buffer.getChannelData(0);
+  for (var i = 0; i < bufferSize; i++){
+    datos[i] = (Math.random()*2 - 1) * (1 - i/bufferSize);
+  }
+  var fuente = ctx.createBufferSource();
+  fuente.buffer = buffer;
+  var gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.1, ctx.currentTime);
+  fuente.connect(gain);
+  gain.connect(ctx.destination);
+  fuente.start();
+}
+
+//Zumbido eléctrico breve: acompaña el "viaje del dato" por las trazas.
+//Distinta altura según si el caracter tiene código asignado o no.
+function sonido_electrico(caracterDefinido){
+  if (!sonido_activado){
+    return;
+  }
+  tono(caracterDefinido ? 900 : 260, 90, 'sawtooth', 0.045);
+}
+
+//Dos tonos ascendentes: "encendido"
+function sonido_generar(){
+  if (!sonido_activado){
+    return;
+  }
+  tono(440, 90, 'square', 0.06);
+  setTimeout(function(){ tono(880, 140, 'square', 0.06); }, 90);
+}
+
+//Barrido descendente: "swipe" de limpieza
+function sonido_limpiar(){
+  if (!sonido_activado){
+    return;
+  }
+  var ctx = obtener_contexto_audio();
+  var osc = ctx.createOscillator();
+  var gain = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(600, ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.25);
+  gain.gain.setValueAtTime(0.06, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.25);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start();
+  osc.stop(ctx.currentTime + 0.25);
+}
+
+//Dos tonos descendentes: "apagado"
+function sonido_reiniciar(){
+  if (!sonido_activado){
+    return;
+  }
+  tono(880, 90, 'square', 0.06);
+  setTimeout(function(){ tono(440, 160, 'square', 0.06); }, 90);
 }

@@ -3,14 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BinarioASCII-Hexa</title>
+<title>BinarioASCII - Orga - UNIPE</title>
 <link rel="stylesheet" type="text/css" media="screen" href="binarioCaracteres.css" />
 <script type="text/javascript" src="binarioCaracteres.js"></script>
 </head>
 <body>
 
 <header class="cabecera">
-  <h1>Simulador de codificación de caracteres</h1>
+  <div class="cabecera-fila">
+    <h1>Simulador de codificación de caracteres - ORGA - UNIPE</h1>
+    <button id="boton_sonido" class="boton-sonido" onclick="alternar_sonido()">🔊 Sonido</button>
+  </div>
 
   <details class="explicacion">
     <summary>¿Cómo funciona este simulador?</summary>
@@ -22,7 +25,7 @@
         <li>La <strong>Pantalla</strong> muestra la interpretación legible de esos mismos bits: la "traducción de vuelta" de binario a carácter.</li>
         <li>Si tipeás un carácter que no está en la tabla, en Pantalla aparece <strong>?</strong> y su posición de memoria queda sin patrón de bits asignado.</li>
       </ol>
-      <p>Podés editar manualmente qué carácter corresponde a cada código (columna "Caracter") y presionar <strong>Actualizar</strong> para armar tus propias codificaciones y mostrar, por ejemplo, qué pasa si dos caracteres comparten el mismo código. El tamaño de la memoria es fijo, se muestra así por motivos didácticos.</p>
+      <p>Podés editar manualmente qué carácter corresponde a cada código (columna "Caracter") y presionar <strong>Actualizar</strong> para armar tus propias codificaciones. El tamaño de la memoria es fijo, se muestra así por motivos didácticos. Las teclas atenuadas en el teclado gráfico son las que todavía no tienen un código asignado con el tamaño de palabra actual.</p>
     </div>
   </details>
 </header>
@@ -43,9 +46,55 @@
 <section id="campo_entrada" class="panel panel-teclado oculto_inicial">
   <h2>Entrada Teclado</h2>
   <div id="div_entrada"></div>
+
+  <div id="teclado_virtual" class="teclado-virtual">
+    <div class="fila-teclado">
+      <span class="tecla" data-char="q">q</span>
+      <span class="tecla" data-char="w">w</span>
+      <span class="tecla" data-char="e">e</span>
+      <span class="tecla" data-char="r">r</span>
+      <span class="tecla" data-char="t">t</span>
+      <span class="tecla" data-char="y">y</span>
+      <span class="tecla" data-char="u">u</span>
+      <span class="tecla" data-char="i">i</span>
+      <span class="tecla" data-char="o">o</span>
+      <span class="tecla" data-char="p">p</span>
+    </div>
+    <div class="fila-teclado">
+      <span class="tecla" data-char="a">a</span>
+      <span class="tecla" data-char="s">s</span>
+      <span class="tecla" data-char="d">d</span>
+      <span class="tecla" data-char="f">f</span>
+      <span class="tecla" data-char="g">g</span>
+      <span class="tecla" data-char="h">h</span>
+      <span class="tecla" data-char="j">j</span>
+      <span class="tecla" data-char="k">k</span>
+      <span class="tecla" data-char="l">l</span>
+    </div>
+    <div class="fila-teclado">
+      <span class="tecla" data-char="z">z</span>
+      <span class="tecla" data-char="x">x</span>
+      <span class="tecla" data-char="c">c</span>
+      <span class="tecla" data-char="v">v</span>
+      <span class="tecla" data-char="b">b</span>
+      <span class="tecla" data-char="n">n</span>
+      <span class="tecla" data-char="m">m</span>
+    </div>
+    <div class="fila-teclado">
+      <span class="tecla tecla-espacio" data-char=" ">espacio</span>
+    </div>
+    <div class="fila-teclado">
+      <span class="tecla" data-char="á">á</span>
+      <span class="tecla" data-char="é">é</span>
+      <span class="tecla" data-char="í">í</span>
+      <span class="tecla" data-char="ó">ó</span>
+      <span class="tecla" data-char="ú">ú</span>
+    </div>
+  </div>
+
   <div id="boton_limpiar">
     <button onclick="limpiar_todo()">Limpiar</button>
-    <button onclick="window.location.reload();">Reiniciar</button>
+    <button onclick="reiniciar_pagina()">Reiniciar</button>
   </div>
 </section>
 
@@ -66,10 +115,17 @@
 
       <div class="panel panel-ram">
         <h2>Vista RAM</h2>
-        <div id="frame_mem">
-          <div id="contenido_mem">
-            <div id="tabla_memoria"></div>
+        <div class="modulo-ram">
+          <div class="chips-decorativos">
+            <span class="chip"></span><span class="chip"></span><span class="chip"></span><span class="chip"></span>
           </div>
+          <div id="frame_mem">
+            <div id="contenido_mem">
+              <div id="tabla_memoria"></div>
+            </div>
+          </div>
+          <span class="etiqueta-ram" id="etiqueta_ram">SIMU-RAM</span>
+          <div class="conectores"></div>
         </div>
       </div>
 
@@ -77,7 +133,13 @@
 
       <div class="panel panel-pantalla">
         <h2>Pantalla</h2>
-        <div id="tabla_pantalla"></div>
+        <div class="modulo-monitor">
+          <span class="led-monitor"></span>
+          <div class="marco-pantalla">
+            <div id="tabla_pantalla"></div>
+          </div>
+        </div>
+        <div class="pie-monitor"></div>
       </div>
 
     </div>
