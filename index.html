@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BinarioASCII-Hexa</title>
+<link rel="stylesheet" type="text/css" media="screen" href="binarioCaracteres.css" />
+<script type="text/javascript" src="binarioCaracteres.js"></script>
+</head>
+<body>
+
+<header class="cabecera">
+  <h1>Simulador de codificación de caracteres</h1>
+
+  <details class="explicacion">
+    <summary>¿Cómo funciona este simulador?</summary>
+    <div class="explicacion-contenido">
+      <ol>
+        <li>Elegís cuántos <strong>bits por carácter</strong> vas a usar y presionás <strong>Generar</strong>. Con <em>n</em> bits se pueden codificar hasta 2ⁿ caracteres distintos (por ahora todos ocupan la misma cantidad de bits: codificación de longitud fija).</li>
+        <li>Se arma una <strong>tabla de codificación</strong>: a cada carácter le corresponde un número, y ese número escrito en binario es su código.</li>
+        <li>Al escribir en <strong>Entrada Teclado</strong>, cada carácter se busca en esa tabla y su código binario se guarda en una posición de la <strong>memoria RAM</strong>.</li>
+        <li>La <strong>Pantalla</strong> muestra la interpretación legible de esos mismos bits: la "traducción de vuelta" de binario a carácter.</li>
+        <li>Si tipeás un carácter que no está en la tabla, en Pantalla aparece <strong>?</strong> y su posición de memoria queda sin patrón de bits asignado.</li>
+      </ol>
+      <p>Podés editar manualmente qué carácter corresponde a cada código (columna "Caracter") y presionar <strong>Actualizar</strong> para armar tus propias codificaciones y mostrar, por ejemplo, qué pasa si dos caracteres comparten el mismo código. El tamaño de la memoria es fijo, se muestra así por motivos didácticos.</p>
+    </div>
+  </details>
+</header>
+
+<section id="generar_cargar" class="panel panel-config">
+  <div class="config-fila">
+    <label for="tamanio_palabra">Bits por caracter:</label>
+    <input type="number" min="1" max="5" id="tamanio_palabra" value="2">
+    <button onclick="generar_instancia_vacia()">Generar</button>
+  </div>
+  <div class="config-fila">
+    <label for="selectFiles">Archivo guardado:</label>
+    <input type="file" id="selectFiles">
+    <button id="import" onclick="cargar_desde_json()">Abrir archivo</button>
+  </div>
+</section>
+
+<section id="campo_entrada" class="panel panel-teclado oculto_inicial">
+  <h2>Entrada Teclado</h2>
+  <div id="div_entrada"></div>
+  <div id="boton_limpiar">
+    <button onclick="limpiar_todo()">Limpiar</button>
+    <button onclick="window.location.reload();">Reiniciar</button>
+  </div>
+</section>
+
+<div class="tuberia-fila">
+
+  <section id="tabla_generar_codificacion" class="panel panel-codificacion oculto_inicial">
+    <h2>Codificación de caracteres</h2>
+    <div id="tabla_campos_codificacion"></div>
+    <div id="boton_actualizar">
+      <button onclick="actualizar_codificacion()">Actualizar</button>
+    </div>
+  </section>
+
+  <div class="traza" id="traza1"><span class="pulso" id="pulso1"></span></div>
+
+  <div id="tabla_salidas" class="salidas-envoltorio oculto_inicial">
+    <div class="salidas-grid">
+
+      <div class="panel panel-ram">
+        <h2>Vista RAM</h2>
+        <div id="frame_mem">
+          <div id="contenido_mem">
+            <div id="tabla_memoria"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="traza" id="traza2"><span class="pulso" id="pulso2"></span></div>
+
+      <div class="panel panel-pantalla">
+        <h2>Pantalla</h2>
+        <div id="tabla_pantalla"></div>
+      </div>
+
+    </div>
+    <div class="acciones-salida">
+      <button onclick="exportar_json()">Guardar texto</button>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

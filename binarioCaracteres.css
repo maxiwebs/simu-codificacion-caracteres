@@ -1,0 +1,285 @@
+:root {
+  --bg: #0d1411;
+  --panel: #141d18;
+  --borde: #263129;
+  --texto: #d7e4dc;
+  --texto-tenue: #5d6b62;
+
+  --accent-ok: #4ade80;    /* dato válido / viaje correcto */
+  --accent-warn: #f5a623;  /* carácter sin código asignado */
+  --cursor: #ffffff;       /* posición de memoria activa */
+
+  --addr-bg: #1f2b1d;
+  --addr-texto: #86b96f;
+
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 28px 20px 60px;
+  background: var(--bg);
+  color: var(--texto);
+  font-family: var(--font-ui);
+  line-height: 1.45;
+}
+
+.oculto_inicial { display: none; }
+
+/* ---------- Cabecera y explicación ---------- */
+
+.cabecera { max-width: 820px; margin: 0 auto 22px; }
+
+.cabecera h1 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 12px;
+  color: var(--texto);
+}
+
+.explicacion {
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 4px;
+  padding: 4px 16px;
+}
+.explicacion summary {
+  cursor: pointer;
+  padding: 10px 0;
+  color: var(--accent-ok);
+  font-size: 0.9rem;
+}
+.explicacion summary::marker { color: var(--accent-ok); }
+.explicacion-contenido { max-width: 640px; padding-bottom: 14px; font-size: 0.92rem; }
+.explicacion-contenido ol { padding-left: 20px; margin: 6px 0 12px; }
+.explicacion-contenido li { margin-bottom: 6px; }
+.explicacion-contenido p { color: var(--texto-tenue); }
+.explicacion-contenido strong { color: var(--texto); }
+
+/* ---------- Paneles base ---------- */
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--borde);
+  border-radius: 4px;
+  padding: 14px 18px;
+}
+
+.panel h2 {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--texto-tenue);
+}
+
+.panel-config, .panel-teclado { max-width: 820px; margin: 0 auto 16px; }
+
+.config-fila { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.config-fila:last-child { margin-bottom: 0; }
+.config-fila label { font-size: 0.85rem; color: var(--texto-tenue); }
+
+#div_entrada input {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  padding: 8px 10px;
+  background: var(--bg);
+  color: var(--texto);
+  border: 1px solid var(--borde);
+  border-radius: 3px;
+  width: 100%;
+}
+
+#boton_limpiar { margin-top: 10px; display: flex; gap: 8px; }
+
+/* ---------- Controles ---------- */
+
+button {
+  background: transparent;
+  color: var(--texto);
+  border: 1px solid var(--borde);
+  border-radius: 3px;
+  padding: 7px 14px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+button:hover { border-color: var(--accent-ok); color: var(--accent-ok); }
+
+input[type="number"], input[type="file"] {
+  background: var(--bg);
+  color: var(--texto);
+  border: 1px solid var(--borde);
+  border-radius: 3px;
+  padding: 6px 8px;
+  font-family: var(--font-mono);
+}
+input[type="number"] { width: 60px; }
+
+:focus-visible { outline: 2px solid var(--accent-ok); outline-offset: 2px; }
+
+/* ---------- Fila con Codificación / RAM / Pantalla conectadas ---------- */
+
+.tuberia-fila {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.tuberia-fila, .salidas-grid {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.panel-codificacion { flex: 1 1 250px; }
+.salidas-envoltorio { flex: 2 1 500px; display: flex; flex-direction: column; gap: 12px; }
+.panel-ram, .panel-pantalla { flex: 1 1 200px; }
+
+.acciones-salida { display: flex; justify-content: flex-end; }
+
+/* Trazas: la línea que conecta paneles, y el pulso que viaja por ella */
+
+.traza {
+  position: relative;
+  flex: 0 0 30px;
+  align-self: center;
+  height: 2px;
+  background: var(--borde);
+}
+.traza::before, .traza::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  background: var(--borde);
+  transform: translateY(-50%);
+}
+.traza::before { left: -3px; }
+.traza::after { right: -3px; }
+
+.pulso {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+}
+
+@keyframes viajar-h {
+  0%   { left: 0%;   opacity: 0; }
+  12%  { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { left: 100%; opacity: 0; }
+}
+@keyframes viajar-v {
+  0%   { top: 0%;   opacity: 0; }
+  12%  { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+.pulso.viaje-ok   { background: var(--accent-ok);   box-shadow: 0 0 8px 2px var(--accent-ok);   animation: viajar-h 650ms linear; }
+.pulso.viaje-warn { background: var(--accent-warn); box-shadow: 0 0 8px 2px var(--accent-warn); animation: viajar-h 650ms linear; }
+
+/* ---------- Tabla de codificación ---------- */
+
+#campos_codificacion {
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  width: 100%;
+}
+#campos_codificacion td { padding: 4px 8px; border-bottom: 1px solid var(--borde); }
+#campos_codificacion tr:first-child td { color: var(--texto-tenue); border-bottom: 1px solid var(--borde); }
+#campos_codificacion input {
+  background: var(--bg);
+  color: var(--texto);
+  border: 1px solid var(--borde);
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  text-align: center;
+}
+
+/* ---------- Vista RAM ---------- */
+
+#frame_mem {
+  height: 250px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 1px solid var(--borde);
+  border-radius: 3px;
+  scroll-behavior: smooth;
+}
+
+#memoria {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+#memoria td { padding: 3px 6px; text-align: center; }
+
+/* ---------- Pantalla ---------- */
+
+#tabla_pantalla { overflow: hidden; border-radius: 3px; }
+
+#monitor {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+}
+#monitor td { padding: 4px 5px; text-align: center; background: var(--bg); }
+
+/* ---------- Animación "viaje del dato" sobre celdas de tabla ---------- */
+
+@keyframes pulso-celda-ok {
+  0%   { outline: 2px solid var(--accent-ok); filter: brightness(1.6); }
+  70%  { outline: 2px solid var(--accent-ok); filter: brightness(1.2); }
+  100% { outline: 2px solid transparent; filter: brightness(1); }
+}
+@keyframes pulso-celda-warn {
+  0%   { outline: 2px solid var(--accent-warn); filter: brightness(1.6); }
+  70%  { outline: 2px solid var(--accent-warn); filter: brightness(1.2); }
+  100% { outline: 2px solid transparent; filter: brightness(1); }
+}
+@keyframes pulso-celda-clear {
+  0%   { outline: 2px solid var(--texto-tenue); filter: brightness(0.8); }
+  100% { outline: 2px solid transparent; filter: brightness(1); }
+}
+td.viaje-ok   { animation: pulso-celda-ok 850ms ease-out; position: relative; }
+td.viaje-warn { animation: pulso-celda-warn 850ms ease-out; position: relative; }
+td.viaje-clear{ animation: pulso-celda-clear 650ms ease-out; position: relative; }
+tr.viaje-ok td, tr.viaje-warn td, tr.viaje-clear td { position: relative; }
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 760px) {
+  .tuberia-fila, .salidas-grid { flex-direction: column; }
+  .tuberia-fila > .traza, .salidas-grid > .traza {
+    width: 2px; height: 30px; flex: 0 0 30px; align-self: center;
+  }
+  .tuberia-fila > .traza::before, .salidas-grid > .traza::before,
+  .tuberia-fila > .traza::after,  .salidas-grid > .traza::after {
+    left: 50%; top: auto; transform: translateX(-50%);
+  }
+  .tuberia-fila > .traza::before, .salidas-grid > .traza::before { top: -3px; }
+  .tuberia-fila > .traza::after,  .salidas-grid > .traza::after  { bottom: -3px; }
+  .pulso.viaje-ok, .pulso.viaje-warn { animation-name: viajar-v; left: 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
